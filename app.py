@@ -87,12 +87,12 @@ if mode == "From Location":
             st.error("Failed to fetch data.")
 else:
     st.subheader("Manual Inputs")
-    st.session_state['pm25'] = st.number_input('PM2.5', min_value=0.0, max_value=500, value=float(st.session_state.get('pm25', 0.0)))
-    st.session_state['pm10'] = st.number_input('PM10', min_value=0.0, max_value=500, value=float(st.session_state.get('pm10', 0.0)))
-    st.session_state['co'] = st.number_input('CO', min_value=0.0, max_value=500, value=float(st.session_state.get('co', 0.0)))
-    st.session_state['so2'] = st.number_input('SO2', min_value=0.0, max_value=500, value=float(st.session_state.get('so2', 0.0)))
-    st.session_state['no2'] = st.number_input('NO2', min_value=0.0, max_value=500, value=float(st.session_state.get('no2', 0.0)))
-    st.session_state['o3'] = st.number_input('O3', min_value=0.0, max_value=500, value=float(st.session_state.get('o3', 0.0)))
+    st.session_state['pm25'] = st.number_input('PM2.5', min_value=0.0, max_value=500.0, value=float(st.session_state.get('pm25', 0.0)))
+    st.session_state['pm10'] = st.number_input('PM10', min_value=0.0, max_value=500.0, value=float(st.session_state.get('pm10', 0.0)))
+    st.session_state['co'] = st.number_input('CO', min_value=0.0, max_value=500.0, value=float(st.session_state.get('co', 0.0)))
+    st.session_state['so2'] = st.number_input('SO2', min_value=0.0, max_value=500.0, value=float(st.session_state.get('so2', 0.0)))
+    st.session_state['no2'] = st.number_input('NO2', min_value=0.0, max_value=500.0, value=float(st.session_state.get('no2', 0.0)))
+    st.session_state['o3'] = st.number_input('O3', min_value=0.0, max_value=500.0, value=float(st.session_state.get('o3', 0.0)))
 
 st.subheader("Pollutant Levels")
 st.table(pd.DataFrame({
