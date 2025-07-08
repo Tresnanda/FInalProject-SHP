@@ -3,6 +3,8 @@ import pandas as pd
 import joblib
 import requests
 
+SENSOR_KEYS = ['aqi', 'co', 'dew', 'h', 'no2', 'o3', 'pm10', 'pm25', 'so2', 't', 'w']
+
 locations = {
     "Aceh": 'indonesia/aceh',
     "Bengkulu": 'indonesia/bengkulu',
@@ -34,7 +36,7 @@ def getDetails(slug):
     headers = {
       'accept': '*/*',
       'accept-language': 'en-US,en;q=0.9,id;q=0.8',
-      'authorization': 'bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FpcnF1YWxpdHkuYXFpLmluL2FwaS92MS9sb2dpbiIsImlhdCI6MTc1MDc2ODM1NiwiZXhwIjoxNzUxOTc3OTU2LCJuYmYiOjE3NTA3NjgzNTYsImp0aSI6Ijg4akE5RnNyUDFBUmpsMjIiLCJzdWIiOiIyOTE2OCIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.KzN_x9HfQ4FLKLxYx9I-y9GXnQitDAbDm_0A7ue5y2M',
+      'authorization': 'bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FpcnF1YWxpdHkuYXFpLmluL2FwaS92MS9sb2dpbiIsImlhdCI6MTc1MTk1NzI2NiwiZXhwIjoxNzUzMTY2ODY2LCJuYmYiOjE3NTE5NTcyNjYsImp0aSI6Im5OWU5TRmZRWE5IOFZHMUUiLCJzdWIiOiIyOTE2OCIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.737ejQ9aFU5OeFwI47yO23IzW0lisWKXkUtvVBYgnNM',
       'origin': 'https://www.aqi.in',
       'priority': 'u=1, i',
       'referer': 'https://www.aqi.in/',
@@ -56,61 +58,56 @@ def getDetails(slug):
     if not data:
         return {}
     airquality = data[0].get("airquality", [])
-    keys = ["pm25","pm10","co","so2","no2","o3"]
-    return {item["sensorName"]: item["sensorData"] for item in airquality if item["sensorName"] in keys}
+    return {item["sensorName"]: item.get("sensorData", 0.0)
+            for item in airquality
+            if item.get("sensorName") in SENSOR_KEYS}
 
 @st.cache_resource
-def load_model(path="RFAQI.joblib"):
+def load_model(path="RFAQI_ScratchNew.joblib"):
     return joblib.load(path)
 
 model = load_model()
 
-for p in ['pm25','pm10','co','so2','no2','o3']:
-    if p not in st.session_state:
-        st.session_state[p] = 0.0
+for key in SENSOR_KEYS:
+    if key not in st.session_state:
+        st.session_state[key] = 0.0
 
 st.title("AQI Prediction Interface")
-st.write("Choose an input mode and set pollutant levels.")
-mode = st.radio("Input Mode", ["Manual","From Location"])
+st.write("Choose input mode and set sensor values for prediction.")
+mode = st.radio("Input Mode", ["Manual", "From Location"])
 
 if mode == "From Location":
     loc = st.selectbox("Location", list(locations.keys()))
-    if st.button("Fetch Pollutants"):
+    if st.button("Fetch Sensors"):
         slug = locations[loc]
-        with st.spinner(f"Fetching for {loc}..."):
+        with st.spinner(f"Fetching data for {loc}..."):
             vals = getDetails(slug)
         if vals:
-            for k,v in vals.items():
+            for k, v in vals.items():
                 st.session_state[k] = v
             st.success(f"Loaded data for {loc}")
         else:
             st.error("Failed to fetch data.")
-else:
-    st.subheader("Manual Inputs")
-    st.session_state['pm25'] = st.number_input('PM2.5', min_value=0.0, max_value=500.0, value=float(st.session_state.get('pm25', 0.0)))
-    st.session_state['pm10'] = st.number_input('PM10', min_value=0.0, max_value=500.0, value=float(st.session_state.get('pm10', 0.0)))
-    st.session_state['co'] = st.number_input('CO', min_value=0.0, max_value=500.0, value=float(st.session_state.get('co', 0.0)))
-    st.session_state['so2'] = st.number_input('SO2', min_value=0.0, max_value=500.0, value=float(st.session_state.get('so2', 0.0)))
-    st.session_state['no2'] = st.number_input('NO2', min_value=0.0, max_value=500.0, value=float(st.session_state.get('no2', 0.0)))
-    st.session_state['o3'] = st.number_input('O3', min_value=0.0, max_value=500.0, value=float(st.session_state.get('o3', 0.0)))
 
-st.subheader("Pollutant Levels")
+else:
+    st.subheader("Manual Sensor Inputs")
+    for key in SENSOR_KEYS:
+        label = key.upper() if len(key) <= 3 else key.capitalize()
+        st.session_state[key] = st.number_input(
+            label,
+            min_value=0.0,
+            max_value=1000.0,
+            value=float(st.session_state.get(key, 0.0))
+        )
+
+st.subheader("Current Sensor Values")
 st.table(pd.DataFrame({
-    'Pollutant':['PM2.5','PM10','CO','SO2','NO2','O3'],
-    'Value':[st.session_state['pm25'], st.session_state['pm10'],
-             st.session_state['co'], st.session_state['so2'],
-             st.session_state['no2'], st.session_state['o3']]
+    'Sensor': [k.upper() for k in SENSOR_KEYS],
+    'Value': [st.session_state[k] for k in SENSOR_KEYS]
 }))
 
 st.subheader("Predicted AQI")
 if st.button("Predict AQI"):
-    input_df = pd.DataFrame({
-        'pm25':[st.session_state['pm25']],
-        'pm10':[st.session_state['pm10']],
-        'co':  [st.session_state['co']],
-        'so2': [st.session_state['so2']],
-        'no2': [st.session_state['no2']],
-        'o3':  [st.session_state['o3']]
-    })
-    aqi = model.predict(input_df)[0]
-    st.success(f"{aqi:.2f}")
+    input_df = pd.DataFrame({key: [st.session_state[key]] for key in SENSOR_KEYS})
+    aqi_pred = model.predict(input_df)[0]
+    st.success(f"Predicted AQI: {aqi_pred:.2f}")
