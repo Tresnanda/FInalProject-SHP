@@ -114,7 +114,7 @@ class RandomForestRegressorScratch:
         return np.mean(preds, axis=0)
 
 
-SENSOR_KEYS = ['aqi', 'co', 'dew', 'h', 'no2', 'o3', 'pm10', 'pm25', 'so2', 't', 'w']
+SENSOR_KEYS = ['co', 'dew', 'h', 'no2', 'o3', 'pm10', 'pm25', 'so2', 't', 'w']
 
 locations = {
     "Aceh": 'indonesia/aceh',
