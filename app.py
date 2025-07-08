@@ -219,6 +219,6 @@ st.table(pd.DataFrame({
 
 st.subheader("Predicted AQI")
 if st.button("Predict AQI"):
-    input_df = pd.DataFrame({key: [st.session_state[key]] for key in SENSOR_KEYS})
-    aqi_pred = model.predict(input_df)[0]
+    input_vals = np.array([[st.session_state[k] for k in SENSOR_KEYS]])
+    aqi_pred = model.predict(input_vals)[0]
     st.success(f"Predicted AQI: {aqi_pred:.2f}")
